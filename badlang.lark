@@ -1,0 +1,61 @@
+// This is the file where all of the rules and terminals are defined
+start: program
+
+program: [_NEWLINE] (global_statement _NEWLINE)* [global_statement]
+
+?global_statement: statement
+    | function_def 
+
+?statement: creation
+    | assignment
+    | function_call
+
+function_def_main: function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)*
+
+function_def: "defo" function_def_main "fino"
+    | "defa" function_def_main "fina"
+
+function_head: _WS_INLINE name "(" ([_WS_INLINE] parameter [_WS_INLINE] ",")* [[_WS_INLINE] parameter] [_WS_INLINE] ")"
+
+creation: gender _WS_INLINE type _WS_INLINE assignment
+
+parameter: gender _WS_INLINE type _WS_INLINE name
+
+assignment: name _WS_INLINE "=" _WS_INLINE expression
+
+expression: name
+    | function_call
+    | "true" gender -> true
+    | "false" gender -> false
+    | "maybe" gender -> maybe
+    | ESCAPED_STRING gender -> string
+    | SIGNED_FLOAT gender -> float
+    | SIGNED_INT gender -> int
+
+function_call: function_conjugation "(" ([_WS_INLINE] expression [_WS_INLINE] ",")* [[_WS_INLINE] expression] [_WS_INLINE] ")"
+
+function_conjugation: name
+
+type: "int" -> int
+    | "float" -> float
+    | "boolean" -> boolean
+    | "string" -> string
+
+gender: "m" -> m
+    | "f" -> f
+
+name: MNAME
+
+MNAME: ("_"|LETTER) ("_"|LETTER|DIGIT)* 
+
+_WS_INLINE: WS_INLINE
+_NEWLINE: NEWLINE
+
+%import common.WS_INLINE
+%import common.CNAME
+%import common.NEWLINE
+%import common.ESCAPED_STRING
+%import common.LETTER
+%import common.DIGIT
+%import common.SIGNED_FLOAT
+%import common.SIGNED_INT
