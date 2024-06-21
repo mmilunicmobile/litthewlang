@@ -1,0 +1,3 @@
+m num test = 5m
+test = 3m
+functionName(false, something, 6m)
