@@ -4,20 +4,19 @@ start: program
 program: [_NEWLINE] (global_statement _NEWLINE)* [global_statement]
 
 ?global_statement: statement
-    | function_def 
+    | function_defo
+    | function_defa
 
 ?statement: creation
     | assignment
     | function_call
 
-function_def_main: function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)*
-
-function_def: "defo" function_def_main "fino"
-    | "defa" function_def_main "fina"
+function_defo: "defo" function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)* "fino"
+function_defa: "defa" function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)* "fina"
 
 function_head: _WS_INLINE name "(" ([_WS_INLINE] parameter [_WS_INLINE] ",")* [[_WS_INLINE] parameter] [_WS_INLINE] ")"
 
-creation: gender _WS_INLINE type _WS_INLINE assignment
+creation: gender _WS_INLINE type _WS_INLINE name _WS_INLINE "=" _WS_INLINE expression
 
 parameter: gender _WS_INLINE type _WS_INLINE name
 
@@ -25,21 +24,19 @@ assignment: name _WS_INLINE "=" _WS_INLINE expression
 
 expression: name
     | function_call
-    | "true" gender -> true
-    | "false" gender -> false
-    | "maybe" gender -> maybe
-    | ESCAPED_STRING gender -> string
-    | SIGNED_FLOAT gender -> float
-    | SIGNED_INT gender -> int
+    | string
+    | num
+
+num: SIGNED_NUMBER gender
+string: ESCAPED_STRING gender
 
 function_call: function_conjugation "(" ([_WS_INLINE] expression [_WS_INLINE] ",")* [[_WS_INLINE] expression] [_WS_INLINE] ")"
 
-function_conjugation: name
+?function_conjugation: name
 
-type: "int" -> int
-    | "float" -> float
-    | "boolean" -> boolean
-    | "string" -> string
+type: "num" -> num_type
+    | "bool" -> boolean_type
+    | "str" -> string_type
 
 gender: "m" -> m
     | "f" -> f
@@ -57,5 +54,5 @@ _NEWLINE: NEWLINE
 %import common.ESCAPED_STRING
 %import common.LETTER
 %import common.DIGIT
-%import common.SIGNED_FLOAT
+%import common.SIGNED_NUMBER
 %import common.SIGNED_INT
