@@ -1,5 +1,5 @@
 // This is the file where all of the rules and terminals are defined
-start: program
+?start: program
 
 program: [_NEWLINE] (global_statement _NEWLINE)* [global_statement]
 
@@ -11,8 +11,8 @@ program: [_NEWLINE] (global_statement _NEWLINE)* [global_statement]
     | assignment
     | function_call
 
-function_defo: "defo" function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)* "fino" _WS_INLINE expression
-function_defa: "defa" function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)* "fina" _WS_INLINE expression
+function_defo: "defo" function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)* "fino" // _WS_INLINE expression
+function_defa: "defa" function_head _NEWLINE [_NEWLINE] ([_WS_INLINE] statement _NEWLINE)* "fina" //_WS_INLINE expression
 
 function_head: _WS_INLINE name "(" ([_WS_INLINE] parameter [_WS_INLINE] ",")* [[_WS_INLINE] parameter] [_WS_INLINE] ")"
 

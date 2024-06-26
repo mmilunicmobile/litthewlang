@@ -1,3 +1,7 @@
-m num test = 5m
-test = 3m
-functionName(false, something, 6m)
+m num blorp = 3f
+
+defo test()
+blorp = 2f
+fino
+
+test()
