@@ -1,7 +1,11 @@
-m num blorp = 3f
+m num outputo = 0m
 
-defo test()
-blorp = 2f
+defo eager(m bool test, m num a, m num b)
+m num returno = a
 fino
 
-test()
+eager(truo, print("Eager A"m), print("Eager B"m))
+
+if(truo, print("Lazy A"m), print("Lazy B"m))
+
+print(concat("The output is "m, concat(numtostr(outputo), "!"m)))

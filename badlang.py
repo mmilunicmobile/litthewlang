@@ -10,7 +10,12 @@ with open('badlang.lark', 'r') as f:
 parser = lark.Lark(content)
 
 # basically this contains a dict of all global variable names and their values
-variable_dict_globals = {}
+variable_dict_globals = {
+    "falso": False,
+    "truo": True,
+    "falsa": False,
+    "trua": True
+}
 
 # same thing as above but stacking for function scope
 variable_dict_stack = [{}]
@@ -182,9 +187,9 @@ class FunctionExpression(Expression, Executable):
         self.name = name
         self.args = args
     
-    def get_value(self):
+    def execute(self):
         executor = functions_dict_globals[self.name]
-        return executor(self.args)
+        executor(*self.args)
     
     def get_primitive_type(self) -> PrimitiveType:
         return functions_dict_globals_types[self.name][-1].get_primitive_type()
@@ -192,8 +197,9 @@ class FunctionExpression(Expression, Executable):
     def get_gender_type(self) -> GenderType:
         return functions_dict_globals_types[self.name][-1].get_gender_type()
     
-    def execute(self):
-        return self.get_value()
+    def get_value(self):
+        executor = functions_dict_globals[self.name]
+        return executor(*self.args)
     
     def __repr__(self):
         return "<" + repr(self.name) + " " + repr(self.args) + ">"
@@ -245,16 +251,44 @@ class FunctionDefenition():
         self.name = name
         self.executable_sequence = executable_sequence
         self.params = params
-        self.scope = params
+        self.scope = {}
+        self.type_scope = {}
 
     def executeFunction(self, *args):
-        print(f"Executing function {self.name}")
-        variable_dict_stack.append(self.scope.copy())
+        #print(f"Executing function {self.name} {args}")
+        temp_scope = self.scope.copy()
         for i, value in enumerate(args):
-            assert (list(self.params.keys())[i]) in variable_dict_stack[-1]
-            variable_dict_stack[-1][self.params.keys()[i]] = value
+            assert (list(self.params.keys())[i]) in temp_scope
+            temp_scope[list(self.params.keys())[i]] = value.get_value()
+        variable_dict_stack.append(temp_scope)
         self.executable_sequence.execute()
+        output = None
+        if ("returno" in variable_dict_stack[-1].keys()):
+            output = variable_dict_stack[-1]["returno"]
+        elif ("returna" in variable_dict_stack[-1].keys()):
+            output = variable_dict_stack[-1]["returna"]
         variable_dict_stack.pop()
+        return output
+    
+    def fillVariablesScopedExecutionDefinitions(self):
+        for param, type_of_param in self.params.items():
+            creation_type = type_of_param.get_primitive_type()
+            if creation_type == PrimitiveType.NUM:
+                self.scope[param] = 0.0
+            elif creation_type == PrimitiveType.STR:
+                self.scope[param] = ""
+            elif creation_type == PrimitiveType.BOOL:
+                self.scope[param] = False
+        for statement in self.executable_sequence.expressions:
+            if isinstance(statement, ExecutableCreation):
+                creation_type = statement.general_type.get_primitive_type()
+                if creation_type == PrimitiveType.NUM:
+                    self.scope[statement.name] = 0.0
+                elif creation_type == PrimitiveType.STR:
+                    self.scope[statement.name] = ""
+                elif creation_type == PrimitiveType.BOOL:
+                    self.scope[statement.name] = False
+
 
     def __repr__(self):
         return "<FunctionDefenition: " + repr({"name": self.name, "params": self.params, "executable_sequence": self.executable_sequence}) + ">"
@@ -266,6 +300,7 @@ class Program():
     def fillFunctionExecutionDefinitions(self):
         for statement in self.statements:
             if isinstance(statement, FunctionDefenition):
+                assert statement.name not in functions_dict_globals.keys()
                 functions_dict_globals[statement.name] = statement.executeFunction
     
     def fillVariableExecutionDefinitions(self):
@@ -273,7 +308,7 @@ class Program():
             if isinstance(statement, ExecutableCreation):
                 creation_type = statement.general_type.get_primitive_type()
                 if creation_type == PrimitiveType.NUM:
-                    variable_dict_globals[statement.name] = 0
+                    variable_dict_globals[statement.name] = 0.0
                 elif creation_type == PrimitiveType.STR:
                     variable_dict_globals[statement.name] = ""
                 elif creation_type == PrimitiveType.BOOL:
@@ -292,10 +327,44 @@ class Program():
     def __repr__(self):
         return "<Program: " + repr(self.statements) + ">"
 
+def addSimpleExecutableFunctionDefinition(name: str, evaluer: Any, params: dict):
+    assert name not in functions_dict_globals.keys()
+    functions_dict_globals[name] = evaluer
+    functions_dict_globals_types[name] = params
+
 with open('test.lithew', 'r') as f:
     content = f.read()
 
 output_program = to_code(parse(content))
+
+#number functions
+addSimpleExecutableFunctionDefinition("add", 
+                                      lambda x, y: x.get_value() + y.get_value(), 
+                                      [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("div", lambda x, y: x.get_value() / y.get_value(),
+                                      [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("mul", lambda x, y: x.get_value() * y.get_value(), 
+                                      [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("sub", lambda x, y: x.get_value() - y.get_value(), 
+                                      [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("mod", lambda x, y: x.get_value() / y.get_value(), 
+                                      [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("numtostr", lambda x: str(x.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("eq", lambda x, y: x.get_value() == y.get_value(), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+
+#string functions
+addSimpleExecutableFunctionDefinition("concat", lambda x, y: x.get_value() + y.get_value(), [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
+def printso(x):
+    print(x.get_value())
+    return 0
+addSimpleExecutableFunctionDefinition("print", printso, [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+
+#boolean functions
+addSimpleExecutableFunctionDefinition("booltostr", lambda x: str(x.get_value()), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
+
+#if statements (this is lazy)
+addSimpleExecutableFunctionDefinition("if",  lambda x, y, z: y.get_value() if x.get_value() else z.get_value(), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 
 # Post-Processsing Steps:
 # * Fill in Variable Types for All Global Creations (ensure name uniqueness) ~ TYPE CHECKING
@@ -311,9 +380,13 @@ output_program.fillFunctionExecutionDefinitions()
 # * Fill in Global Variable Definitions ~ CODE EXECUTION
 output_program.fillVariableExecutionDefinitions()
 # * Fill in Scoped Variable Definitions ~ CODE EXECUTION
+output_program.fillVariableScopedExecutionDefinitions()
 
-print(output_program)
+#print(output_program)
 
-output_program.executeProgram()
+try:
+    output_program.executeProgram()
+except (RecursionError):
+    print("Recursion Error: You recursed too hard. Go to jail.")
 
-print(variable_dict_globals)
+#print(variable_dict_globals)
