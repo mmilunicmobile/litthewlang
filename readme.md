@@ -31,7 +31,7 @@ fino
 
 ### Predefined Functions
 
-Look in the code in [badlang](badlang.py#L344-L395).
+Look in the code in [badlang](litthewlang.py#L344-L395).
 
 `addnum`, `getnum` and their `str` and `bool` converses act as the only way to create lists in the programming language. See 
 
