@@ -6,7 +6,7 @@ from typeguard import typechecked
 
 import sys
 
-with open('lithewlang.lark', 'r') as f:
+with open('litthewlang.lark', 'r') as f:
     content = f.read()
 
 parser = lark.Lark(content)
