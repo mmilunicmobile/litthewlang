@@ -4,10 +4,14 @@ from enum import Enum
 
 from typeguard import typechecked
 
-with open('badlang.lark', 'r') as f:
+import sys
+
+with open('lithewlang.lark', 'r') as f:
     content = f.read()
 
 parser = lark.Lark(content)
+
+programName = sys.argv[1]
 
 # basically this contains a dict of all global variable names and their values
 variable_dict_globals = {
@@ -31,6 +35,9 @@ functions_dict_globals = {}
 # includes tuples of (name, [param, param, param, return type])
 functions_dict_globals_types = {}
 
+string_heap = {}
+num_heap = {}
+bool_heap = {}
 
 def parse(text):
     return parser.parse(text)
@@ -262,7 +269,7 @@ class FunctionDefenition():
             temp_scope[list(self.params.keys())[i]] = value.get_value()
         variable_dict_stack.append(temp_scope)
         self.executable_sequence.execute()
-        output = None
+        output = 0.0
         if ("returno" in variable_dict_stack[-1].keys()):
             output = variable_dict_stack[-1]["returno"]
         elif ("returna" in variable_dict_stack[-1].keys()):
@@ -332,7 +339,7 @@ def addSimpleExecutableFunctionDefinition(name: str, evaluer: Any, params: dict)
     functions_dict_globals[name] = evaluer
     functions_dict_globals_types[name] = params
 
-with open('test.lithew', 'r') as f:
+with open(programName, 'r') as f:
     content = f.read()
 
 output_program = to_code(parse(content))
@@ -351,7 +358,11 @@ addSimpleExecutableFunctionDefinition("mod", lambda x, y: x.get_value() / y.get_
                                       [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 addSimpleExecutableFunctionDefinition("numtostr", lambda x: str(x.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 
-addSimpleExecutableFunctionDefinition("eq", lambda x, y: x.get_value() == y.get_value(), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("eqnum", lambda x, y: x.get_value() == y.get_value(), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("lt", lambda x, y: x.get_value() < y.get_value(), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("gt", lambda x, y: x.get_value() > y.get_value(), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
 
 #string functions
 addSimpleExecutableFunctionDefinition("concat", lambda x, y: x.get_value() + y.get_value(), [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
@@ -360,11 +371,33 @@ def printso(x):
     return 0
 addSimpleExecutableFunctionDefinition("print", printso, [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 
+addSimpleExecutableFunctionDefinition("eqstr", lambda x, y: x.get_value() == y.get_value(), [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+
 #boolean functions
-addSimpleExecutableFunctionDefinition("booltostr", lambda x: str(x.get_value()), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("booltostr", lambda x: "truo" if x.get_value() else "falso", [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("eqbool", lambda x, y: x.get_value() == y.get_value(), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("not", lambda x: not x.get_value(), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
 
 #if statements (this is lazy)
-addSimpleExecutableFunctionDefinition("if",  lambda x, y, z: y.get_value() if x.get_value() else z.get_value(), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("lazyif",  lambda x, y, z: y.get_value() if x.get_value() else z.get_value(), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("c", lambda x: 0.0, [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+
+# heaps (dictionary and string substitute)
+def heapSub(heap, x, y):
+    heap[x] = y
+    return 0
+addSimpleExecutableFunctionDefinition("addnum",  lambda x, y: heapSub(num_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("getnum",  lambda x: num_heap[x.get_value()], [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("addstr",  lambda x, y: heapSub(string_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("getstr",  lambda x: string_heap[x.get_value()], [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+
+addSimpleExecutableFunctionDefinition("addbool",  lambda x, y: heapSub(bool_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("getbool",  lambda x: bool_heap[x.get_value()], [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+
 
 # Post-Processsing Steps:
 # * Fill in Variable Types for All Global Creations (ensure name uniqueness) ~ TYPE CHECKING
@@ -388,5 +421,10 @@ try:
     output_program.executeProgram()
 except (RecursionError):
     print("Recursion Error: You recursed too hard. Go to jail.")
+except (ZeroDivisionError):
+    print("Zero Division Error: You divided by zero. Your program was sucked into a black hole.")
+except (KeyError):
+    print("Key Error: You used a variable that doesn't exist. Womp to the womp.")
 
 #print(variable_dict_globals)
+#print(num_heap)

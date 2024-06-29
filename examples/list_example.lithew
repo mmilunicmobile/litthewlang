@@ -1,0 +1,33 @@
+defo linit(m num listPointer)
+    addnum(listPointer, 0m)
+fino
+
+defo lad(m num listPointer, m num a)
+    m num listLength = getnum(listPointer)
+    addnum(add(listLength, add(listPointer, 1m)), a)
+    addnum(listPointer, add(listLength, 1m))
+fino
+
+m num lista = 6m
+
+linit(lista)
+lad(lista, 4m)
+lad(lista, 2m)
+lad(lista, 1m)
+lad(lista, 6m)
+lad(lista, -5m)
+
+defo mainLoop(m num index, m num listPointer)
+    m num listLength = getnum(listPointer)
+    lazyif(lt(index, listLength), subLoop(index, listPointer), 0m)
+fino
+
+defo subLoop(m num index, m num listPointer)
+    m num value = getnum(add(index, add(listPointer, 1m)))
+    print(numtostr(mul(value,value)))
+    mainLoop(add(index, 1m), listPointer)
+fino
+
+print("Time to calculate out squares!"m)
+mainLoop(0m, lista)
+print("Yay! We're done!"m)
