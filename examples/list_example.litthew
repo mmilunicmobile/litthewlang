@@ -1,3 +1,4 @@
+c("this is a program that gives an example of a list implementation. this is typesafe"m)
 defo linit(m num listPointer)
     addnum(listPointer, 0m)
 fino

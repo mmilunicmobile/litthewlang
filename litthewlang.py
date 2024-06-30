@@ -20,9 +20,10 @@ class GenderType(Enum):
 
 @typechecked 
 class GeneralType():
-    def __init__(self, primitive_type: PrimitiveType, gender_type: GenderType):
+    def __init__(self, primitive_type: PrimitiveType, gender_type: GenderType, always_equal = False):
         self.primitive_type = primitive_type
         self.gender_type = gender_type
+        self.always_equal = always_equal
     
     def get_primitive_type(self) -> PrimitiveType:
         return self.primitive_type
@@ -34,7 +35,7 @@ class GeneralType():
         return f"{self.primitive_type} {self.gender_type}"
     
     def __eq__(self, other):
-        return self.primitive_type == other.primitive_type and self.gender_type == other.gender_type
+        return self.always_equal or other.always_equal or (self.primitive_type == other.primitive_type and self.gender_type == other.gender_type)
 
 
 argument_parser = argparse.ArgumentParser(
@@ -269,6 +270,7 @@ class FunctionExpression(Expression, Executable):
             arg.setScope(scope)
 
     def typecheck(self):
+        assert(len(self.args) == len(functions_dict_globals_types_params[self.name]))
         for a, b in zip(self.args, functions_dict_globals_types_params[self.name]):
             assert a.get_type() == b
     
@@ -393,14 +395,14 @@ class FunctionDefenition():
     
 class Program():
     def __init__(self, statements):
-        self.statements = statements
+        self.statements = [statement for statement in statements if statement is not None]
     
     def fillFunctionExecutionDefinitions(self):
         for statement in self.statements:
             if isinstance(statement, FunctionDefenition):
                 assert statement.name not in functions_dict_globals.keys()
                 functions_dict_globals[statement.name] = statement.executeFunction
-                functions_dict_globals_types_params[statement.name] = statement.params
+                functions_dict_globals_types_params[statement.name] = statement.params.values()
                 output = GeneralType(PrimitiveType.NUM, statement.gender)
                 if ("returno" in statement.type_scope):
                     output = statement.type_scope["returno"]
@@ -498,7 +500,7 @@ addSimpleExecutableFunctionDefinition("not", lambda x: not x.get_value(), [Gener
 #if statements (this is lazy)
 addSimpleExecutableFunctionDefinition("lazyif",  lambda x, y, z: y.get_value() if x.get_value() else z.get_value(), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 
-addSimpleExecutableFunctionDefinition("c", lambda x: 0.0, [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("c", lambda x: 0.0, [GeneralType(PrimitiveType.STR, GenderType.MALE, True) , GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 
 # heaps (dictionary and string substitute)
 def heapSub(heap, x, y):
@@ -510,17 +512,17 @@ def heapGet(heap, x):
         return heap[x]
     except (KeyError):
         print("Heap Access Error: You used a variable on the heap that doesn't exist. Womp to the womp.")
-addSimpleExecutableFunctionDefinition("addnum",  lambda x, y: heapSub(num_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("addnum",  lambda x, y: heapSub(num_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 addSimpleExecutableFunctionDefinition("getnum",  lambda x: heapGet(num_heap,x.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
 
-addSimpleExecutableFunctionDefinition("addstr",  lambda x, y: heapSub(string_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
-addSimpleExecutableFunctionDefinition("getstr",  lambda x: heapGet(string_heap, x.get_value()), [GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("addstr",  lambda x, y: heapSub(string_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("getstr",  lambda x: heapGet(string_heap, x.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 
-addSimpleExecutableFunctionDefinition("addbool",  lambda x, y: heapSub(bool_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
-addSimpleExecutableFunctionDefinition("getbool",  lambda x: heapGet(string_heap, x.get_value()), [GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("addbool",  lambda x, y: heapSub(bool_heap, x.get_value(), y.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE), GeneralType(PrimitiveType.NUM, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("getbool",  lambda x: heapGet(string_heap, x.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 
 #typing
-addSimpleExecutableFunctionDefinition("type", lambda x: str(x.get_type()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE), GeneralType(PrimitiveType.BOOL, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("type", lambda x: str(x.get_type()), [GeneralType(PrimitiveType.NUM, GenderType.MALE, True), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 
 # Post-Processsing Steps:
 # * Run Through Semantic Name Checking (gender) for Creations and Function Definitions ~ TYPE CHECKING

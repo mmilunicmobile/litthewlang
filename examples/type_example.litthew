@@ -1,1 +1,13 @@
+c("this program will properly compile. this is typesafe"m)
+defo test(m num a)
+m num returno = 5m
+fino
+
 m str bobby = "test"m
+
+test(1m)
+
+bobby = concat(booltostr(falso), "test"m)
+
+c("Both c() and type() can take expressions of any type. This makes c() simpler to use and type() not useless"m)
+print(type(bobby))
