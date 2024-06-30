@@ -31,15 +31,22 @@ fino
 
 ### Predefined Functions
 
-Look in the code in [badlang](litthewlang.py#L344-L395).
+Look in the code in [badlang](litthewlang.py#L508-L571).
 
-`addnum`, `getnum` and their `str` and `bool` converses act as the only way to create lists in the programming language. See 
+`addnum`, `getnum` and their `str` and `bool` converses act as the only way to create lists in the programming language.
+
+`type`, `c`, and `meta` take any type and have no typechecking applied to their arguments. They are also lazy and do not evaluate their arguments.
+
+`lazyif` does not evaluate its argument unless it absolutely has to. This can be used to create branching code.
 
 ### Run Code
 
 Simply run `python3 litthewlang.py [your file here]` to run a file.
 
 Officially the perferred ending to a file is `.litthew` for now.
+
+### Flags
+Use the flag `-t` to remove typechecking.
 
 ### Installation
 

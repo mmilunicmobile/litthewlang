@@ -1,0 +1,12 @@
+m num test = "test string"f
+
+test = falso
+
+defo funfunction(m num a, f num b)
+    m num returno = a
+fino
+
+f bool bloby = funfunction(
+    1m, 
+    falsa
+)

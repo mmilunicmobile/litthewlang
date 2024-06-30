@@ -30,12 +30,27 @@ class GeneralType():
     
     def get_gender_type(self) -> GenderType:
         return self.gender_type
+
+    def pretty(self) -> str:
+        output = ""
+        if self.gender_type == GenderType.MALE:
+            output += "m "
+        else:
+            output += "f "
+        if self.primitive_type == PrimitiveType.STR:
+            output += "str"
+        elif self.primitive_type == PrimitiveType.NUM:
+            output += "num"
+        elif self.primitive_type == PrimitiveType.BOOL:
+            output += "bool"
+        return output
     
     def __repr__(self):
         return f"{self.primitive_type} {self.gender_type}"
     
     def __eq__(self, other):
         return self.always_equal or other.always_equal or (self.primitive_type == other.primitive_type and self.gender_type == other.gender_type)
+
 
 
 argument_parser = argparse.ArgumentParser(
@@ -60,7 +75,7 @@ DO_GENDER_CHECK = not arguments.no_gender_check
 with open('litthewlang.lark', 'r') as f:
     content = f.read()
 
-parser = lark.Lark(content)
+parser = lark.Lark(content, propagate_positions=True)
 
 
 programName = arguments.filename
@@ -97,6 +112,11 @@ string_heap = {}
 num_heap = {}
 bool_heap = {}
 
+published_errors = []
+
+with open(programName, 'r') as f:
+    content = f.read()
+
 def parse(text):
     return parser.parse(text)
 
@@ -122,14 +142,18 @@ class TreeToCode(lark.Transformer):
     num_type = lambda _, n: PrimitiveType.NUM
     boolean_type = lambda _, n: PrimitiveType.BOOL
 
-    def expression(self, s):
+    @lark.v_args(meta=True)
+    def expression(self, meta, s):
         [s] = s
         if isinstance(s, PrimitiveExpression):
-            return s
+            output = s
         elif isinstance(s, FunctionExpression):
-            return s
+            output = s
         elif isinstance(s, str):
-            return VariableExpression(s)
+            output = VariableExpression(s)
+        output.meta = meta
+        assert output is not None
+        return output
     
     def parameter(self, s):
         return (s[2], GeneralType(s[1], s[0]))
@@ -160,12 +184,14 @@ class TreeToCode(lark.Transformer):
         typechecks.append(val)
         return val
     
-    def function_call(self, s):
+    @lark.v_args(meta=True)
+    def function_call(self, meta, s):
         name = s[0]
         args = s[1:]
         if args == [None]:
             args = []
         val = FunctionExpression(s[0], *args)
+        val.meta = meta
         typechecks.append(val)
         return val
     
@@ -174,6 +200,15 @@ class TreeToCode(lark.Transformer):
 
 def to_code(tree):
     return TreeToCode().transform(tree)
+
+def contextualizeErrorFromMeta(meta):
+    front_pad = " " * (meta.column + len(f"{meta.line}: ") - 1) 
+    output = f"{meta.line}: {content.splitlines()[meta.line - 1]}\n{front_pad}^"
+    return output
+
+def createError(error, meta) -> str:
+    output = f"Error: \n{error}\n{contextualizeErrorFromMeta(meta)}"
+    return output
 
 #expressions have these methods
 # get value (returns base python value)
@@ -270,9 +305,16 @@ class FunctionExpression(Expression, Executable):
             arg.setScope(scope)
 
     def typecheck(self):
-        assert(len(self.args) == len(functions_dict_globals_types_params[self.name]))
-        for a, b in zip(self.args, functions_dict_globals_types_params[self.name]):
-            assert a.get_type() == b
+        if len(self.args) != len(functions_dict_globals_types_params[self.name]):
+            message = f"type mismatch: tried calling <{self.name}()> with {len(self.args)} arguments, but {len(functions_dict_globals_types_params[self.name])} arguments were expected"
+            published_errors.append(createError(message, self.meta))
+            return
+
+        for i, (a, b) in enumerate(zip(self.args, functions_dict_globals_types_params[self.name])):
+            if (a.get_type() != b):
+                message = f"type mismatch: tried calling <{self.name}()> with an {a.get_type().pretty()} for argument {i + 1}, but {b.pretty()} was expected"
+                published_errors.append(createError(message, a.meta))
+
     
     def __repr__(self):
         return "<" + repr(self.name) + " " + repr(self.args) + ">"
@@ -310,7 +352,9 @@ class ExecutableAssignment(Executable):
     def typecheck(self):
         my_type = self.expression.get_type()
         other_my_tpye = self.scope[self.name]
-        assert my_type == other_my_tpye
+        if (my_type != other_my_tpye):
+            message = f"type mismatch: tried assigning an {my_type.pretty()} to <{self.name}>, but <{self.name}> has type {other_my_tpye.pretty()}"
+            published_errors.append(createError(message, self.expression.meta))
 
 class ExecutableCreation(Executable):
     def __init__(self, general_type, name, expression):
@@ -334,7 +378,9 @@ class ExecutableCreation(Executable):
     def typecheck(self):
         my_type = self.expression.get_type()
         other_my_tpye = self.general_type
-        assert my_type == other_my_tpye
+        if (my_type != other_my_tpye):
+            message = f"type mismatch: tried assigning an {my_type.pretty()} to <{self.name}>, but <{self.name}> has type {other_my_tpye.pretty()}"
+            published_errors.append(createError(message, self.expression.meta))
 
 class FunctionDefenition():
     def __init__(self, name, params, executable_sequence, gender: GenderType):
@@ -456,9 +502,6 @@ def addSimpleExecutableFunctionDefinition(name: str, evaluer: Any, params: dict)
     functions_dict_globals_types[name] = params[-1]
     functions_dict_globals_types_params[name] = params[:-1]
 
-with open(programName, 'r') as f:
-    content = f.read()
-
 output_program = to_code(parse(content))
 
 #number functions
@@ -522,8 +565,10 @@ addSimpleExecutableFunctionDefinition("addbool",  lambda x, y: heapSub(bool_heap
 addSimpleExecutableFunctionDefinition("getbool",  lambda x: heapGet(string_heap, x.get_value()), [GeneralType(PrimitiveType.NUM, GenderType.MALE), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 
 #typing
-addSimpleExecutableFunctionDefinition("type", lambda x: str(x.get_type()), [GeneralType(PrimitiveType.NUM, GenderType.MALE, True), GeneralType(PrimitiveType.STR, GenderType.MALE)])
+addSimpleExecutableFunctionDefinition("type", lambda x: x.get_type().pretty(), [GeneralType(PrimitiveType.NUM, GenderType.MALE, True), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 
+#meta
+addSimpleExecutableFunctionDefinition("meta", lambda x: contextualizeErrorFromMeta(x.meta), [GeneralType(PrimitiveType.NUM, GenderType.MALE, True), GeneralType(PrimitiveType.STR, GenderType.MALE)])
 # Post-Processsing Steps:
 # * Run Through Semantic Name Checking (gender) for Creations and Function Definitions ~ TYPE CHECKING
 # * Ensure Gender Equality ~ TYPE CHECKING
@@ -554,13 +599,16 @@ if (DO_TYPE_CHECK):
 
 #print(output_program)
 
-try:
-    output_program.executeProgram()
-except (RecursionError):
-    print("Recursion Error: You recursed too hard. Go to jail.")
-except (ZeroDivisionError):
-    print("Zero Division Error: You divided by zero. Your program was sucked into a black hole.")
+if (len(published_errors) == 0):
+    try:
+        output_program.executeProgram()
+    except (RecursionError):
+        print("Recursion Error: You recursed too hard. Go to jail.")
+    except (ZeroDivisionError):
+        print("Zero Division Error: You divided by zero. Your program was sucked into a black hole.")
+else:
+    print("\n\n".join(published_errors))
 
-print("Program Complete")
+# print("Program Complete")
 # print(variable_dict_globals)
 # print(num_heap)
