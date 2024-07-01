@@ -69,8 +69,8 @@ argument_parser.add_argument('-g', '--no-gender',
 arguments = argument_parser.parse_args()
 
 DO_SEMANTIC_NAME_CHECK = False
-DO_TYPE_CHECK = not arguments.no_type_check
-DO_GENDER_CHECK = not arguments.no_gender_check
+DO_TYPE_CHECK = not arguments.no_type
+DO_GENDER_CHECK = not arguments.no_gender
 
 with open('litthewlang.lark', 'r') as f:
     content = f.read()
