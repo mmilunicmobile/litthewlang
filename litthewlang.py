@@ -58,17 +58,17 @@ argument_parser = argparse.ArgumentParser(
                     description='This will interpret your Litthewlang programs.',
                     epilog='This is version v0.2.0')
 
-argument_parser.add_argument('filename')
-argument_parser.add_argument('-t', '--no-type-check',
-                    action='store_true')  # on/off flag
-argument_parser.add_argument('-g', '--no-gender-check',
-                    action='store_true') 
-argument_parser.add_argument('-n', '--no-name-check',
-                    action='store_true')
+argument_parser.add_argument('filename',  help='the Litthewlang file to be interpreted')
+argument_parser.add_argument('-t', '--no-type',
+                    action='store_true', help='disable type checking')  # on/off flag
+argument_parser.add_argument('-g', '--no-gender',
+                    action='store_true', help='disable gender type checking') 
+# argument_parser.add_argument('-n', '--no-name',
+#                     action='store_true')
 
 arguments = argument_parser.parse_args()
 
-DO_SEMANTIC_NAME_CHECK = not arguments.no_gender_check
+DO_SEMANTIC_NAME_CHECK = False
 DO_TYPE_CHECK = not arguments.no_type_check
 DO_GENDER_CHECK = not arguments.no_gender_check
 

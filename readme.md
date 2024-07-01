@@ -1,9 +1,9 @@
-# litthewlang
-litthewlang is in verison 0.1.0. Currently it works and can be used to do things.
+# Litthewlang
+Litthewlang is in verison v0.2.0. Currently it works and can be used to do things.
 
-Version 1.0.0 will come with fully funcitonal type checking for all stuff so you don't get type errors. There probably will be a flag to not check gender type.
+Version v1.0.0 will come with fully funcitonal type checking and semantic genering for all stuff so you don't get type errors. There probably will be a flag to not check gender type.
 
-Version 2.0.0 will come with time travel functionality.
+Version v1.1.0 will come with time travel functionality.
 
 ### Syntactical Structures:
 
@@ -31,7 +31,7 @@ fino
 
 ### Predefined Functions
 
-Look in the code in [badlang](litthewlang.py#L508-L571).
+Look in the code in [litthewlang.py](litthewlang.py#L517-L580).
 
 `addnum`, `getnum` and their `str` and `bool` converses act as the only way to create lists in the programming language.
 
@@ -46,7 +46,14 @@ Simply run `python3 litthewlang.py [your file here]` to run a file.
 Officially the perferred ending to a file is `.litthew` for now.
 
 ### Flags
-Use the flag `-t` to remove typechecking.
+Use the flag `-t` to remove all typechecking.
+
+Use the flag `-g` to remove the gender part of typechecking. (Ex: treat m num and f num as compatible.)
+
+Use -h for help.
+
+### Examples
+Examples are in the `examples` folder.
 
 ### Installation
 

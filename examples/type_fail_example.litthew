@@ -1,3 +1,4 @@
+c("This program will not actually run but will just give a bunch of errors to demonstrate the error checker."f)
 m num test = "test string"f
 
 test = 1f

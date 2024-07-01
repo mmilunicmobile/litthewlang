@@ -1,4 +1,4 @@
-c("this is a program that gives an example of a list implementation. this is typesafe"m)
+c("this is a program that gives an example of a list implementation. this is typesafe, not quite memory safe though"m)
 defo linit(m num listPointer)
     addnum(listPointer, 0m)
 fino
