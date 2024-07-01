@@ -1,6 +1,6 @@
 m num test = "test string"f
 
-test = falso
+test = 1f
 
 defo funfunction(m num a, f num b)
     m num returno = a

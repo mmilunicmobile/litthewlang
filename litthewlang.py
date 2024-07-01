@@ -49,7 +49,7 @@ class GeneralType():
         return f"{self.primitive_type} {self.gender_type}"
     
     def __eq__(self, other):
-        return self.always_equal or other.always_equal or (self.primitive_type == other.primitive_type and self.gender_type == other.gender_type)
+        return self.always_equal or other.always_equal or (self.primitive_type == other.primitive_type and (self.gender_type == other.gender_type or not DO_GENDER_CHECK))
 
 
 
@@ -279,6 +279,9 @@ class VariableExpression(Expression):
         
     def setScope(self, scope):
         self.parentScopeTypes = scope
+        if not ((self.name) in scope.keys() or (self.name) in variable_dict_globals_types.keys()):
+            message = f"cannot find variable: variable <{self.name}> does not exist in this scope"
+            published_errors.append(createError(message, self.meta))
 
 @typechecked
 class FunctionExpression(Expression, Executable):
@@ -301,6 +304,9 @@ class FunctionExpression(Expression, Executable):
         return executor(*self.args)
     
     def setScope(self, scope):
+        if not ((self.name) in functions_dict_globals_types_params.keys()):
+            message = f"cannot find function: function <{self.name}()> does not exist"
+            published_errors.append(createError(message, self.meta))
         for arg in self.args:
             arg.setScope(scope)
 
@@ -348,6 +354,9 @@ class ExecutableAssignment(Executable):
     def setScope(self, scope):
         self.expression.setScope(scope)
         self.scope = scope
+        if not ((self.name) in scope.keys() or (self.name) in variable_dict_globals_types.keys()):
+            message = f"cannot find variable: variable <{self.name}> does not exist in this scope"
+            published_errors.append(createError(message, self.expression.meta))
 
     def typecheck(self):
         my_type = self.expression.get_type()
@@ -593,6 +602,10 @@ output_program.fillFunctionExecutionDefinitions()
 # backtrack and let all variable expressions know their type
 output_program.fillVariableExpressionTypes()
 
+if (len(published_errors) != 0):
+    print("\n\n".join(published_errors))
+    exit(1)
+
 # * Run Type Checking on Functions, Creations, and Assignments (ensure everything is taking the right types) ~ TYPE CHECKING
 if (DO_TYPE_CHECK):
     output_program.typecheck()
@@ -608,6 +621,9 @@ if (len(published_errors) == 0):
         print("Zero Division Error: You divided by zero. Your program was sucked into a black hole.")
 else:
     print("\n\n".join(published_errors))
+    exit(1)
+
+exit(0)
 
 # print("Program Complete")
 # print(variable_dict_globals)

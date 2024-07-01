@@ -9,5 +9,5 @@ test(1m)
 
 bobby = concat(booltostr(falso), "test"m)
 
-c("Both c() and type() can take expressions of any type. This makes c() simpler to use and type() not useless"m)
-print(type(bobby))
+c("c(), type(), and meta() can take expressions of any type. This makes c() and meta() simpler to use and type() not useless"m)
+print(concat("The type of <bobby> is "m, concat(type(bobby), "!"m)))
